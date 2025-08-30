@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/assets/css/style.css?v=">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup theme-color -->
+<!-- start theme color meta headers -->
+<meta name="theme-color" content="#151515">
+<meta name="msapplication-navbutton-color" content="#151515">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- end theme color meta headers -->
+
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Path Traversal | PMD • Pentest Notes</title>
+<meta name="generator" content="Jekyll v4.4.1" />
+<meta property="og:title" content="Path Traversal" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Notes (Web Security) &amp; HackTheBox writeups by PMD" />
+<meta property="og:description" content="Notes (Web Security) &amp; HackTheBox writeups by PMD" />
+<link rel="canonical" href="https://pmd-007.github.io/notes/path-traversal/" />
+<meta property="og:url" content="https://pmd-007.github.io/notes/path-traversal/" />
+<meta property="og:site_name" content="PMD • Pentest Notes" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Path Traversal" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Notes (Web Security) &amp; HackTheBox writeups by PMD","headline":"Path Traversal","url":"https://pmd-007.github.io/notes/path-traversal/"}</script>
+<!-- End Jekyll SEO tag -->
+
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <a id="a-title" href="/">
+          <h1>PMD • Pentest Notes</h1>
+        </a>
+        <h2>Notes (Web Security) & HackTheBox writeups by PMD</h2>
+
+        <section id="downloads">
+          
+          <a href="https://github.com/pmd-007" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <!-- Breadcrumb neon -->
+<div class="breadcrumbs">
+  <a href="/">🏠 Home</a>
+  &nbsp;/&nbsp;
+  <a href="/notes/">📓 Notes</a>
+  &nbsp;/&nbsp;<span>Path Traversal</span>
+</div>
+
+<main>
+  <!-- TOC có thể thu gọn/mở rộng -->
+  <nav id="toc" class="toc collapsed" aria-expanded="false">
+    <div class="toc-head" role="button" aria-expanded="false">
+      <span class="toc-caret">▸</span>
+      <strong>Contents</strong>
+    </div>
+    <div class="toc-body"></div>
+  </nav>
+
+  <h1 id="path-traversal">🔍Path Traversal</h1>
+
+<h2 id="1-path-là-gì">1. Path là gì?</h2>
+
+<p>Trong đời thực, path giống như đường đi từ nhà bạn ra chợ: có thể là đường <strong>tuyệt đối</strong> (absolute) hoặc đường <strong>tương đối</strong> (relative).
+Trên máy tính cũng vậy: <strong>path</strong> là đường dẫn đến file hoặc thư mục.</p>
+
+<p>Ví dụ:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Absolute Path</th>
+      <th>Relative Path</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">/etc/ssh</code></td>
+      <td><code class="language-plaintext highlighter-rouge">./ssh</code> hoặc <code class="language-plaintext highlighter-rouge">ssh</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Trong Linux có vài quy ước nhỏ nhưng quan trọng:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">.</code>  → thư mục hiện tại</li>
+  <li><code class="language-plaintext highlighter-rouge">..</code> → thư mục cha</li>
+</ul>
+
+<p>👉 Nghe thì đơn giản, nhưng chỉ cần hacker biết cách lợi dụng mấy ký hiệu này, bạn sẽ thấy “đi lạc” thành một cuộc tấn công thật sự.</p>
+
+<hr />
+
+<h2 id="2-path-traversal-là-gì">2. Path Traversal là gì?</h2>
+
+<p><strong>Path Traversal</strong> (hay Directory Traversal) là kỹ thuật hacker chèn thêm <code class="language-plaintext highlighter-rouge">../</code> vào đường dẫn để <strong>thoát khỏi thư mục được phép</strong> và truy cập sang chỗ nhạy cảm.</p>
+
+<p>Ví dụ đoạn code PHP:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$file_name</span> <span class="o">=</span> <span class="nv">$_GET</span><span class="p">[</span><span class="s1">'file_name'</span><span class="p">];</span>
+<span class="nv">$file_path</span> <span class="o">=</span> <span class="s1">'/var/www/html/images/'</span> <span class="mf">.</span> <span class="nv">$file_name</span><span class="p">;</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="nb">file_exists</span><span class="p">(</span><span class="nv">$file_path</span><span class="p">))</span>
+    <span class="nb">readfile</span><span class="p">(</span><span class="nv">$file_path</span><span class="p">);</span>
+<span class="k">else</span>
+    <span class="k">echo</span> <span class="s1">'404 Not Found'</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p>Ở đây <code class="language-plaintext highlighter-rouge">$_GET['file_name']</code> chính là <strong>Untrusted Data</strong>.
+Nếu hacker nhập <code class="language-plaintext highlighter-rouge">../../../etc/passwd</code>, biến <code class="language-plaintext highlighter-rouge">$file_path</code> sẽ thành:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/var/www/html/images/../../../etc/passwd
+</code></pre></div></div>
+
+<p>👉 Và file <code class="language-plaintext highlighter-rouge">/etc/passwd</code> lộ ra ngoài 😱</p>
+
+<hr />
+
+<h2 id="3-tại-sao-nguy-hiểm">3. Tại sao nguy hiểm?</h2>
+
+<ul>
+  <li>Hacker có thể <strong>đọc</strong> file nhạy cảm: <code class="language-plaintext highlighter-rouge">/etc/passwd</code>, config DB, source code.</li>
+  <li>Nếu có hàm ghi file → có thể <strong>ghi đè</strong> file hệ thống → dẫn đến RCE.</li>
+  <li>Người dùng vô tội có thể bị ảnh hưởng: lộ thông tin, phishing, chiếm quyền.</li>
+</ul>
+
+<p><strong>Tóm gọn:</strong> chỉ cần một input không kiểm soát, hậu quả có thể lan rộng cả hệ thống.</p>
+
+<hr />
+
+<h2 id="4-biến-thể-của-path-traversal">4. Biến thể của Path Traversal</h2>
+
+<p>Một số chỗ dễ dính Path Traversal trong code PHP:</p>
+
+<ul>
+  <li><strong>READ</strong> → <code class="language-plaintext highlighter-rouge">readfile(untrusted_data)</code></li>
+  <li><strong>WRITE</strong> → <code class="language-plaintext highlighter-rouge">file_put_contents(untrusted_data)</code></li>
+  <li><strong>DELETE</strong> → <code class="language-plaintext highlighter-rouge">unlink(untrusted_data)</code></li>
+  <li><strong>RCE</strong> → <code class="language-plaintext highlighter-rouge">include(untrusted_data)</code></li>
+</ul>
+
+<p>👉 Chỉ cần một chỗ sai, hacker có thể biến một input nhỏ thành một cuộc tấn công nghiêm trọng.</p>
+
+<hr />
+
+<h2 id="5-path-traversal-trong-file-nén-zip-slip">5. Path Traversal trong file nén (Zip Slip)</h2>
+
+<p>Path Traversal không chỉ xảy ra trong web, mà còn trong việc <strong>giải nén file ZIP/TAR</strong>.</p>
+
+<p>Ví dụ code Java:</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">File</span> <span class="n">f</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">File</span><span class="o">(</span><span class="n">destinationDir</span><span class="o">,</span> <span class="n">e</span><span class="o">.</span><span class="na">getName</span><span class="o">());</span>
+<span class="nc">IOUtils</span><span class="o">.</span><span class="na">copy</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="n">write</span><span class="o">(</span><span class="n">f</span><span class="o">));</span>
+</code></pre></div></div>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">e.getName()</code> → tên file trong zip (Untrusted Data).</li>
+  <li>Nếu hacker nhét file có tên <code class="language-plaintext highlighter-rouge">../../../tmp/test</code>, thì khi giải nén, file sẽ nằm ở <code class="language-plaintext highlighter-rouge">/tmp/test</code>.</li>
+</ul>
+
+<p>👉 Đây là kỹ thuật <strong>Zip Slip</strong>, từng làm mưa làm gió trong cộng đồng bảo mật.</p>
+
+<hr />
+
+<h2 id="6-một-ví-dụ-thực-tế--cdnjs-cloudflare-zip-slip">6. Một ví dụ thực tế – CDNJS Cloudflare Zip Slip</h2>
+
+<p>Bug hunter phát hiện lỗi Path Traversal trong thư viện <code class="language-plaintext highlighter-rouge">archive/tar</code> (Golang).
+Vấn đề: server <strong>không kiểm tra tên file</strong> trong <code class="language-plaintext highlighter-rouge">.tar.gz</code> khi giải nén.</p>
+
+<p>Hậu quả:</p>
+
+<ul>
+  <li>Hacker upload <code class="language-plaintext highlighter-rouge">.tar.gz</code> độc hại.</li>
+  <li>Khi giải nén, file được ghi đè vào vị trí nhạy cảm.</li>
+  <li>Nếu ghi đè file script chạy định kỳ → dẫn đến <strong>RCE</strong>.</li>
+</ul>
+
+<p>Chi tiết: <a href="https://blog.ryotak.me/post/cdnjs-remote-code-execution-en/">Cloudflare Zip Slip to RCE</a></p>
+
+<hr />
+
+<h2 id="7-cách-phòng-thủ-️">7. Cách phòng thủ ✍️</h2>
+
+<ul>
+  <li><strong>Luôn giả định</strong> input liên quan đến path/file là không tin cậy.</li>
+  <li><strong>Nghĩ ngay</strong>: “Nếu mình thêm <code class="language-plaintext highlighter-rouge">../</code> vào đây thì sao?”</li>
+  <li><strong>Phòng thủ</strong>:
+    <ul>
+      <li>Normalize path trước khi dùng.</li>
+      <li>Áp dụng whitelist cho file hợp lệ.</li>
+      <li>Không bao giờ trust input trực tiếp.</li>
+    </ul>
+  </li>
+</ul>
+
+<hr />
+
+<h2 id="8-tham-khảo-thêm-">8. Tham khảo thêm 📚</h2>
+
+<ul>
+  <li><a href="https://en.wikipedia.org/wiki/Path_(computing)">Wikipedia: Path Computing</a></li>
+  <li><a href="https://github.com/monstra-cms/monstra/issues/457">Monstra CMS Path Traversal → Delete File</a></li>
+</ul>
+
+<hr />
+
+<p>💡 <strong>Note cá nhân</strong>: Đây là một trong những lỗi web kinh điển, dễ test bằng BurpSuite. Hễ thấy chức năng upload file / download file / view logs → nhớ thử ngay <code class="language-plaintext highlighter-rouge">../</code> 😎</p>
+
+</main>
+
+<!-- Nút Back cuối trang -->
+<p style="margin-top:2rem; text-align:center;">
+  <a href="/notes/" class="back-notes">⬅ Back to Notes</a>
+</p>
+
+<!-- Nút nổi Back to Top -->
+<button id="backTop" title="Back to Top">⬆</button>
+
+<style>
+:root { --bar-h: 48px; }
+
+/* Breadcrumb pill neon */
+.breadcrumbs{
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .4rem .8rem;
+  margin: .75rem 0 1rem;
+  background: #111;
+  border: 1px solid #0f0;
+  border-radius: 9999px;
+  box-shadow: 0 0 6px rgba(0,255,0,.25);
+}
+.breadcrumbs a{ color:#4af; text-decoration:none; font-weight:600; }
+.breadcrumbs span{ color:#fff; font-weight:700; }
+
+/* Anchor jump không bị che */
+main h2, main h3 { scroll-margin-top: calc(var(--bar-h) + 12px); }
+
+/* TOC collapsible */
+.toc{
+  border-left:3px solid #6f6;
+  margin:.5rem 0 1.2rem;
+  background:#0b0b0b;
+  border-radius:8px;
+  box-shadow:0 0 6px rgba(0,255,0,.15);
+}
+.toc-head{
+  display:flex; align-items:center; gap:.5rem;
+  padding:.55rem .9rem; cursor:pointer; user-select:none;
+}
+.toc-caret{ transition: transform .2s ease; }
+.toc[aria-expanded="true"] .toc-caret,
+.toc:not(.collapsed) .toc-caret{ transform: rotate(90deg); }
+
+.toc-body{
+  overflow:hidden;
+  max-height:0;
+  transition:max-height .25s ease, padding .25s ease;
+  padding:0 .9rem;
+}
+.toc:not(.collapsed) .toc-body{
+  padding:.2rem .9rem .8rem;
+  max-height: 1200px;
+}
+.toc-body ul{ list-style:none; padding-left:0; margin:0; }
+.toc-body li{ margin:.2rem 0; }
+.toc-body a{ text-decoration:none; }
+.toc-body li[data-level="3"]{ margin-left:1rem; }
+
+/* Back button */
+.back-notes{
+  display:inline-block;
+  padding:.6rem 1.2rem;
+  border:1px solid #0f0;
+  border-radius:9999px;
+  color:#4af;
+  text-decoration:none;
+  font-weight:600;
+  background:#111;
+  box-shadow:0 0 6px rgba(0,255,0,.25);
+  transition: all .25s ease;
+}
+.back-notes:hover{ background:#0f0; color:#111; }
+
+/* Back to Top floating */
+#backTop {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1100;
+  display: none;
+  cursor: pointer;
+  padding: .6rem .8rem;
+  border:1px solid #0f0;
+  border-radius:50%;
+  background:#111;
+  color:#4af;
+  font-weight: bold;
+  font-size: 1.4rem;   /* 👈 tăng cỡ chữ ở đây */
+  box-shadow:0 0 6px rgba(0,255,0,.25);
+  transition: all .25s ease;
+}
+#backTop:hover{ background:#0f0; color:#111; }
+</style>
+
+<script>
+/* Build TOC (H2/H3) + collapse/expand, nhớ trạng thái theo trang */
+(function(){
+  const toc = document.getElementById('toc');
+  if(!toc) return;
+
+  const content = document.querySelector('main') || document.body;
+  const heads = [...content.querySelectorAll('h2, h3')];
+  if(!heads.length){ toc.remove(); return; }
+
+  // gán id nếu thiếu
+  heads.forEach(h=>{
+    if(!h.id) h.id = h.textContent.trim().toLowerCase()
+      .replace(/[^\w\- ]+/g,'').replace(/\s+/g,'-');
+  });
+
+  // build list
+  const ul = document.createElement('ul');
+  heads.forEach(h=>{
+    const li = document.createElement('li');
+    li.setAttribute('data-level', h.tagName === 'H3' ? '3' : '2');
+    const a = document.createElement('a');
+    a.href = '#'+h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    ul.appendChild(li);
+  });
+  toc.querySelector('.toc-body').appendChild(ul);
+
+  // trạng thái mở/đóng
+  const key = 'toc-state:'+location.pathname;
+  const preferOpen = window.matchMedia('(min-width: 900px)').matches; // desktop mặc định mở
+  const saved = localStorage.getItem(key);
+  const startOpen = saved ? saved === 'open' : preferOpen;
+  setExpanded(startOpen);
+
+  toc.querySelector('.toc-head').addEventListener('click', ()=>{
+    const open = toc.classList.contains('collapsed');
+    setExpanded(open);
+    localStorage.setItem(key, open ? 'open' : 'closed');
+  });
+
+  // click link TOC -> auto đóng trên mobile
+  toc.addEventListener('click', e=>{
+    const a = e.target.closest('a');
+    if(!a) return;
+    if(!window.matchMedia('(min-width: 900px)').matches){
+      setExpanded(false);
+      localStorage.setItem(key, 'closed');
+    }
+  });
+
+  function setExpanded(open){
+    toc.classList.toggle('collapsed', !open);
+    toc.setAttribute('aria-expanded', String(open));
+    toc.querySelector('.toc-head').setAttribute('aria-expanded', String(open));
+  }
+})();
+
+/* Back to Top: hiện/ẩn + cuộn mượt */
+(function(){
+  const btn = document.getElementById('backTop');
+  if(!btn) return;
+
+  const toggle = () => {
+    btn.style.display = window.scrollY > 200 ? 'block' : 'none';
+  };
+  window.addEventListener('scroll', toggle, {passive:true});
+  toggle();
+
+  btn.addEventListener('click', ()=>{
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+})();
+</script>
+
+      </section>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/assets/css/style.css?v=">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup theme-color -->
+<!-- start theme color meta headers -->
+<meta name="theme-color" content="#151515">
+<meta name="msapplication-navbutton-color" content="#151515">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- end theme color meta headers -->
+
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Shoppy | PMD • Pentest Notes</title>
+<meta name="generator" content="Jekyll v4.4.1" />
+<meta property="og:title" content="Shoppy" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Notes (Web Security) &amp; HackTheBox writeups by PMD" />
+<meta property="og:description" content="Notes (Web Security) &amp; HackTheBox writeups by PMD" />
+<link rel="canonical" href="https://pmd-007.github.io/htb/shoppy/" />
+<meta property="og:url" content="https://pmd-007.github.io/htb/shoppy/" />
+<meta property="og:site_name" content="PMD • Pentest Notes" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Shoppy" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Notes (Web Security) &amp; HackTheBox writeups by PMD","headline":"Shoppy","url":"https://pmd-007.github.io/htb/shoppy/"}</script>
+<!-- End Jekyll SEO tag -->
+
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <a id="a-title" href="/">
+          <h1>PMD • Pentest Notes</h1>
+        </a>
+        <h2>Notes (Web Security) & HackTheBox writeups by PMD</h2>
+
+        <section id="downloads">
+          
+          <a href="https://github.com/pmd-007" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <!-- Breadcrumb neon -->
+<div class="breadcrumbs">
+  <a href="/">🏠 Home</a>
+  &nbsp;/&nbsp;
+  <a href="/notes/">📓 Notes</a>
+  &nbsp;/&nbsp;<span>Shoppy</span>
+</div>
+
+<main>
+  <!-- TOC có thể thu gọn/mở rộng -->
+  <nav id="toc" class="toc collapsed" aria-expanded="false">
+    <div class="toc-head" role="button" aria-expanded="false">
+      <span class="toc-caret">▸</span>
+      <strong>Contents</strong>
+    </div>
+    <div class="toc-body"></div>
+  </nav>
+
+  <h1 id="htb---shoppy">HTB - Shoppy</h1>
+
+<h2 id="recon">Recon</h2>
+<ul>
+  <li>Subdomain + Mongo-related endpoints.</li>
+</ul>
+
+<h2 id="exploit">Exploit</h2>
+<ul>
+  <li>NoSQL injection → auth bypass.</li>
+</ul>
+
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<ul>
+  <li>Reuse creds / sudo misconfig.</li>
+</ul>
+
+<h2 id="lessons-learned">Lessons Learned</h2>
+<ul>
+  <li>NoSQLi patterns and payloads.</li>
+</ul>
+
+</main>
+
+<!-- Nút Back cuối trang -->
+<p style="margin-top:2rem; text-align:center;">
+  <a href="/notes/" class="back-notes">⬅ Back to Notes</a>
+</p>
+
+<!-- Nút nổi Back to Top -->
+<button id="backTop" title="Back to Top">⬆</button>
+
+<style>
+:root { --bar-h: 48px; }
+
+/* Breadcrumb pill neon */
+.breadcrumbs{
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .4rem .8rem;
+  margin: .75rem 0 1rem;
+  background: #111;
+  border: 1px solid #0f0;
+  border-radius: 9999px;
+  box-shadow: 0 0 6px rgba(0,255,0,.25);
+}
+.breadcrumbs a{ color:#4af; text-decoration:none; font-weight:600; }
+.breadcrumbs span{ color:#fff; font-weight:700; }
+
+/* Anchor jump không bị che */
+main h2, main h3 { scroll-margin-top: calc(var(--bar-h) + 12px); }
+
+/* TOC collapsible */
+.toc{
+  border-left:3px solid #6f6;
+  margin:.5rem 0 1.2rem;
+  background:#0b0b0b;
+  border-radius:8px;
+  box-shadow:0 0 6px rgba(0,255,0,.15);
+}
+.toc-head{
+  display:flex; align-items:center; gap:.5rem;
+  padding:.55rem .9rem; cursor:pointer; user-select:none;
+}
+.toc-caret{ transition: transform .2s ease; }
+.toc[aria-expanded="true"] .toc-caret,
+.toc:not(.collapsed) .toc-caret{ transform: rotate(90deg); }
+
+.toc-body{
+  overflow:hidden;
+  max-height:0;
+  transition:max-height .25s ease, padding .25s ease;
+  padding:0 .9rem;
+}
+.toc:not(.collapsed) .toc-body{
+  padding:.2rem .9rem .8rem;
+  max-height: 1200px;
+}
+.toc-body ul{ list-style:none; padding-left:0; margin:0; }
+.toc-body li{ margin:.2rem 0; }
+.toc-body a{ text-decoration:none; }
+.toc-body li[data-level="3"]{ margin-left:1rem; }
+
+/* Back button */
+.back-notes{
+  display:inline-block;
+  padding:.6rem 1.2rem;
+  border:1px solid #0f0;
+  border-radius:9999px;
+  color:#4af;
+  text-decoration:none;
+  font-weight:600;
+  background:#111;
+  box-shadow:0 0 6px rgba(0,255,0,.25);
+  transition: all .25s ease;
+}
+.back-notes:hover{ background:#0f0; color:#111; }
+
+/* Back to Top floating */
+#backTop {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1100;
+  display: none;
+  cursor: pointer;
+  padding: .6rem .8rem;
+  border:1px solid #0f0;
+  border-radius:50%;
+  background:#111;
+  color:#4af;
+  font-weight: bold;
+  font-size: 1.4rem;   /* 👈 tăng cỡ chữ ở đây */
+  box-shadow:0 0 6px rgba(0,255,0,.25);
+  transition: all .25s ease;
+}
+#backTop:hover{ background:#0f0; color:#111; }
+</style>
+
+<script>
+/* Build TOC (H2/H3) + collapse/expand, nhớ trạng thái theo trang */
+(function(){
+  const toc = document.getElementById('toc');
+  if(!toc) return;
+
+  const content = document.querySelector('main') || document.body;
+  const heads = [...content.querySelectorAll('h2, h3')];
+  if(!heads.length){ toc.remove(); return; }
+
+  // gán id nếu thiếu
+  heads.forEach(h=>{
+    if(!h.id) h.id = h.textContent.trim().toLowerCase()
+      .replace(/[^\w\- ]+/g,'').replace(/\s+/g,'-');
+  });
+
+  // build list
+  const ul = document.createElement('ul');
+  heads.forEach(h=>{
+    const li = document.createElement('li');
+    li.setAttribute('data-level', h.tagName === 'H3' ? '3' : '2');
+    const a = document.createElement('a');
+    a.href = '#'+h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    ul.appendChild(li);
+  });
+  toc.querySelector('.toc-body').appendChild(ul);
+
+  // trạng thái mở/đóng
+  const key = 'toc-state:'+location.pathname;
+  const preferOpen = window.matchMedia('(min-width: 900px)').matches; // desktop mặc định mở
+  const saved = localStorage.getItem(key);
+  const startOpen = saved ? saved === 'open' : preferOpen;
+  setExpanded(startOpen);
+
+  toc.querySelector('.toc-head').addEventListener('click', ()=>{
+    const open = toc.classList.contains('collapsed');
+    setExpanded(open);
+    localStorage.setItem(key, open ? 'open' : 'closed');
+  });
+
+  // click link TOC -> auto đóng trên mobile
+  toc.addEventListener('click', e=>{
+    const a = e.target.closest('a');
+    if(!a) return;
+    if(!window.matchMedia('(min-width: 900px)').matches){
+      setExpanded(false);
+      localStorage.setItem(key, 'closed');
+    }
+  });
+
+  function setExpanded(open){
+    toc.classList.toggle('collapsed', !open);
+    toc.setAttribute('aria-expanded', String(open));
+    toc.querySelector('.toc-head').setAttribute('aria-expanded', String(open));
+  }
+})();
+
+/* Back to Top: hiện/ẩn + cuộn mượt */
+(function(){
+  const btn = document.getElementById('backTop');
+  if(!btn) return;
+
+  const toggle = () => {
+    btn.style.display = window.scrollY > 200 ? 'block' : 'none';
+  };
+  window.addEventListener('scroll', toggle, {passive:true});
+  toggle();
+
+  btn.addEventListener('click', ()=>{
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+})();
+</script>
+
+      </section>
+    </div>
+  </body>
+</html>

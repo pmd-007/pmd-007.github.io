@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/assets/css/style.css?v=">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup theme-color -->
+<!-- start theme color meta headers -->
+<meta name="theme-color" content="#151515">
+<meta name="msapplication-navbutton-color" content="#151515">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- end theme color meta headers -->
+
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Symlink Attack | PMD • Pentest Notes</title>
+<meta name="generator" content="Jekyll v4.4.1" />
+<meta property="og:title" content="Symlink Attack" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Notes (Web Security) &amp; HackTheBox writeups by PMD" />
+<meta property="og:description" content="Notes (Web Security) &amp; HackTheBox writeups by PMD" />
+<link rel="canonical" href="https://pmd-007.github.io/notes/symlink-attack/" />
+<meta property="og:url" content="https://pmd-007.github.io/notes/symlink-attack/" />
+<meta property="og:site_name" content="PMD • Pentest Notes" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Symlink Attack" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Notes (Web Security) &amp; HackTheBox writeups by PMD","headline":"Symlink Attack","url":"https://pmd-007.github.io/notes/symlink-attack/"}</script>
+<!-- End Jekyll SEO tag -->
+
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <a id="a-title" href="/">
+          <h1>PMD • Pentest Notes</h1>
+        </a>
+        <h2>Notes (Web Security) & HackTheBox writeups by PMD</h2>
+
+        <section id="downloads">
+          
+          <a href="https://github.com/pmd-007" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <!-- Breadcrumb neon -->
+<div class="breadcrumbs">
+  <a href="/">🏠 Home</a>
+  &nbsp;/&nbsp;
+  <a href="/notes/">📓 Notes</a>
+  &nbsp;/&nbsp;<span>Symlink Attack</span>
+</div>
+
+<main>
+  <!-- TOC có thể thu gọn/mở rộng -->
+  <nav id="toc" class="toc collapsed" aria-expanded="false">
+    <div class="toc-head" role="button" aria-expanded="false">
+      <span class="toc-caret">▸</span>
+      <strong>Contents</strong>
+    </div>
+    <div class="toc-body"></div>
+  </nav>
+
+  <hr />
+<p>layout: notes
+title: Symlink Attack
+—</p>
+<h1 id="-symlink-attack--khi-đường-tắt-trở-thành-cửa-hậu">🪝 Symlink Attack – Khi đường tắt trở thành cửa hậu</h1>
+
+<hr />
+
+<h2 id="1-shortcut-vs-symlink">1) Shortcut vs. Symlink</h2>
+
+<ul>
+  <li><strong>Shortcut</strong> tạo ra <em>đường tắt</em> tới file thật.</li>
+  <li><strong>Symlink</strong> (Linux gọi là symbolic link) cũng vậy, nhưng bản thân nó không chứa nội dung, chỉ <strong>trỏ</strong> tới một file/thư mục khác.</li>
+  <li>→ Có thể coi <strong>Symlink là ảnh ảo của file gốc</strong>.</li>
+</ul>
+
+<p>Ví dụ Windows gọi là <strong>shortcut</strong> 🪟, Linux 🐧 gọi là <strong>symlink</strong>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Tạo symlink trong Linux</span>
+<span class="nb">ln</span> <span class="nt">-s</span> /etc/passwd link_to_passwd
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="2-các-hành-vi-đặc-biệt-của-symlink">2) Các hành vi đặc biệt của Symlink</h2>
+
+<ul>
+  <li>Đọc 👀 / Ghi ✏️ → tác động <strong>trực tiếp</strong> vào file gốc</li>
+  <li>Xóa ❌ / Di chuyển 🚗 → chỉ ảnh hưởng tới symlink, không ảnh hưởng file gốc</li>
+  <li>Thực thi 🔥 → thật ra là thực thi file gốc</li>
+  <li>Symlink có thể trỏ cả folder, khi ghi file vào folder link → file được ghi trực tiếp vào folder gốc</li>
+</ul>
+
+<hr />
+
+<h2 id="3-các-viễn-cảnh-khai-thác-symlink">3) Các viễn cảnh khai thác Symlink</h2>
+
+<h3 id="31-giả-thuyết-1--upload-symlink-trực-tiếp">3.1. Giả thuyết 1 – Upload symlink trực tiếp</h3>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        Hacker 🕵️
+   ┌──────────────────┐
+   │  link_to_passwd  │───────┐
+   │   (symlink)      │       │ Upload qua Internet 🌐
+   └───────┬──────────┘       │
+           │                  │
+           ▼                  ▼
+   ┌──────────────────┐  ┌──────────────────┐
+   │   /etc/passwd    │  │ Server 🖥️       |
+   │  (file thật)     │  │ link_to_passwd   │
+   └──────────────────┘  │(chỉ là “vỏ rỗng”)|  
+                         └──────────────────┘
+</code></pre></div></div>
+
+<p>📌 Kết quả: Thất bại 🚫</p>
+
+<ul>
+  <li>Hacker tưởng sẽ đọc được <code class="language-plaintext highlighter-rouge">/etc/passwd</code> trên server.</li>
+  <li>Nhưng thực tế chỉ gửi được file symlink rỗng hoặc server hiểu là file text nhỏ có metadata kiểu vậy, vì <strong>symlink không mang nội dung file gốc đi qua Internet</strong>.</li>
+</ul>
+
+<hr />
+
+<h3 id="32-giả-thuyết-2--đóng-gói-symlink-trong-zip">3.2. Giả thuyết 2 – Đóng gói symlink trong ZIP</h3>
+
+<p>Ý tưởng: nén symlink vào <code class="language-plaintext highlighter-rouge">.zip</code> rồi upload → khi server giải nén, symlink được tái tạo.</p>
+
+<ul>
+  <li><strong>zip</strong> và <strong>unzip</strong> của GNU hỗ trợ symlink.</li>
+  <li>Nếu server tự động giải nén → <strong>ta có được symlink thật trên server</strong>.</li>
+  <li>Thành công đọc file bất kỳ, ví dụ <code class="language-plaintext highlighter-rouge">/etc/passwd</code>.</li>
+</ul>
+
+<p>🔎 <strong>Ví dụ thực tế: Facebook</strong> – <a href="https://josipfranjkovic.blogspot.com/2014/12/reading-local-files-from-facebooks.html">link</a></p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Hacker: zip -y link_to_passwd step1.zip
+Server: unzip step1.zip → tạo lại symlink
+Kết quả: đọc được file thật trên server
+</code></pre></div></div>
+
+<hr />
+
+<h3 id="33-giả-thuyết-3--từ-đọc-file--rce-">3.3. Giả thuyết 3 – Từ đọc file → RCE 🚀</h3>
+
+<p>Bước nâng cấp:</p>
+
+<ol>
+  <li>Tạo symlink trỏ tới thư mục document root (<code class="language-plaintext highlighter-rouge">/var/www/html</code>).</li>
+  <li>Nén lại và upload lên server.</li>
+  <li>Khi giải nén, symlink “bắc cầu” để ghi file trực tiếp vào webroot.</li>
+  <li>Upload shell.php → RCE thành công.</li>
+</ol>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[ Hacker ] --upload--&gt; [ step1.zip ]
+ → unzip → symlink vào /var/www/html
+ → ghi file shell → RCE server
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="4-ví-dụ-thực-tế">4) Ví dụ thực tế</h2>
+
+<ul>
+  <li><strong>CVE-2018-14364</strong> – Bug trong Ruby RegEx dẫn đến bypass kiểm tra symlink, cho phép RCE.🔗 https://hackerone.com/reports/378148</li>
+  <li>Với Apache: config <code class="language-plaintext highlighter-rouge">FollowSymLinks</code> quyết định việc server có đi theo symlink hay không. Nếu bật → nguy cơ đọc/ghi file gốc qua symlink.</li>
+</ul>
+
+<div class="language-apache highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">&lt;</span><span class="nl">Directory</span><span class="sr"> /var/www/</span><span class="p">&gt;
+</span>   <span class="nc">Options</span> <span class="ss">Indexes</span> <span class="ss">FollowSymLinks</span>
+   <span class="nc">AllowOverride</span> <span class="ss">None</span>
+   <span class="nc">Require</span> <span class="ss">all</span> granted
+<span class="p">&lt;/</span><span class="nl">Directory</span><span class="p">&gt;
+</span></code></pre></div></div>
+
+<hr />
+
+<h2 id="tóm-lại-">Tóm lại 🎯</h2>
+
+<p>Symlink vốn là tính năng hợp pháp, nhưng nếu kết hợp với:</p>
+
+<ul>
+  <li><strong>Zip/Unzip tự động</strong></li>
+  <li><strong>Sai config (FollowSymLinks)</strong></li>
+  <li><strong>Kiểm tra input lỏng lẻo</strong></li>
+</ul>
+
+<p>→ sẽ biến thành <strong>vũ khí nguy hiểm</strong> cho attacker để <strong>đọc file nhạy cảm</strong> hoặc thậm chí <strong>RCE</strong>.</p>
+
+</main>
+
+<!-- Nút Back cuối trang -->
+<p style="margin-top:2rem; text-align:center;">
+  <a href="/notes/" class="back-notes">⬅ Back to Notes</a>
+</p>
+
+<!-- Nút nổi Back to Top -->
+<button id="backTop" title="Back to Top">⬆</button>
+
+<style>
+:root { --bar-h: 48px; }
+
+/* Breadcrumb pill neon */
+.breadcrumbs{
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .4rem .8rem;
+  margin: .75rem 0 1rem;
+  background: #111;
+  border: 1px solid #0f0;
+  border-radius: 9999px;
+  box-shadow: 0 0 6px rgba(0,255,0,.25);
+}
+.breadcrumbs a{ color:#4af; text-decoration:none; font-weight:600; }
+.breadcrumbs span{ color:#fff; font-weight:700; }
+
+/* Anchor jump không bị che */
+main h2, main h3 { scroll-margin-top: calc(var(--bar-h) + 12px); }
+
+/* TOC collapsible */
+.toc{
+  border-left:3px solid #6f6;
+  margin:.5rem 0 1.2rem;
+  background:#0b0b0b;
+  border-radius:8px;
+  box-shadow:0 0 6px rgba(0,255,0,.15);
+}
+.toc-head{
+  display:flex; align-items:center; gap:.5rem;
+  padding:.55rem .9rem; cursor:pointer; user-select:none;
+}
+.toc-caret{ transition: transform .2s ease; }
+.toc[aria-expanded="true"] .toc-caret,
+.toc:not(.collapsed) .toc-caret{ transform: rotate(90deg); }
+
+.toc-body{
+  overflow:hidden;
+  max-height:0;
+  transition:max-height .25s ease, padding .25s ease;
+  padding:0 .9rem;
+}
+.toc:not(.collapsed) .toc-body{
+  padding:.2rem .9rem .8rem;
+  max-height: 1200px;
+}
+.toc-body ul{ list-style:none; padding-left:0; margin:0; }
+.toc-body li{ margin:.2rem 0; }
+.toc-body a{ text-decoration:none; }
+.toc-body li[data-level="3"]{ margin-left:1rem; }
+
+/* Back button */
+.back-notes{
+  display:inline-block;
+  padding:.6rem 1.2rem;
+  border:1px solid #0f0;
+  border-radius:9999px;
+  color:#4af;
+  text-decoration:none;
+  font-weight:600;
+  background:#111;
+  box-shadow:0 0 6px rgba(0,255,0,.25);
+  transition: all .25s ease;
+}
+.back-notes:hover{ background:#0f0; color:#111; }
+
+/* Back to Top floating */
+#backTop {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1100;
+  display: none;
+  cursor: pointer;
+  padding: .6rem .8rem;
+  border:1px solid #0f0;
+  border-radius:50%;
+  background:#111;
+  color:#4af;
+  font-weight: bold;
+  font-size: 1.4rem;   /* 👈 tăng cỡ chữ ở đây */
+  box-shadow:0 0 6px rgba(0,255,0,.25);
+  transition: all .25s ease;
+}
+#backTop:hover{ background:#0f0; color:#111; }
+</style>
+
+<script>
+/* Build TOC (H2/H3) + collapse/expand, nhớ trạng thái theo trang */
+(function(){
+  const toc = document.getElementById('toc');
+  if(!toc) return;
+
+  const content = document.querySelector('main') || document.body;
+  const heads = [...content.querySelectorAll('h2, h3')];
+  if(!heads.length){ toc.remove(); return; }
+
+  // gán id nếu thiếu
+  heads.forEach(h=>{
+    if(!h.id) h.id = h.textContent.trim().toLowerCase()
+      .replace(/[^\w\- ]+/g,'').replace(/\s+/g,'-');
+  });
+
+  // build list
+  const ul = document.createElement('ul');
+  heads.forEach(h=>{
+    const li = document.createElement('li');
+    li.setAttribute('data-level', h.tagName === 'H3' ? '3' : '2');
+    const a = document.createElement('a');
+    a.href = '#'+h.id;
+    a.textContent = h.textContent;
+    li.appendChild(a);
+    ul.appendChild(li);
+  });
+  toc.querySelector('.toc-body').appendChild(ul);
+
+  // trạng thái mở/đóng
+  const key = 'toc-state:'+location.pathname;
+  const preferOpen = window.matchMedia('(min-width: 900px)').matches; // desktop mặc định mở
+  const saved = localStorage.getItem(key);
+  const startOpen = saved ? saved === 'open' : preferOpen;
+  setExpanded(startOpen);
+
+  toc.querySelector('.toc-head').addEventListener('click', ()=>{
+    const open = toc.classList.contains('collapsed');
+    setExpanded(open);
+    localStorage.setItem(key, open ? 'open' : 'closed');
+  });
+
+  // click link TOC -> auto đóng trên mobile
+  toc.addEventListener('click', e=>{
+    const a = e.target.closest('a');
+    if(!a) return;
+    if(!window.matchMedia('(min-width: 900px)').matches){
+      setExpanded(false);
+      localStorage.setItem(key, 'closed');
+    }
+  });
+
+  function setExpanded(open){
+    toc.classList.toggle('collapsed', !open);
+    toc.setAttribute('aria-expanded', String(open));
+    toc.querySelector('.toc-head').setAttribute('aria-expanded', String(open));
+  }
+})();
+
+/* Back to Top: hiện/ẩn + cuộn mượt */
+(function(){
+  const btn = document.getElementById('backTop');
+  if(!btn) return;
+
+  const toggle = () => {
+    btn.style.display = window.scrollY > 200 ? 'block' : 'none';
+  };
+  window.addEventListener('scroll', toggle, {passive:true});
+  toggle();
+
+  btn.addEventListener('click', ()=>{
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+})();
+</script>
+
+      </section>
+    </div>
+  </body>
+</html>
