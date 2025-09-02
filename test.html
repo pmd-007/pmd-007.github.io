@@ -1,0 +1,201 @@
+<!-- ===== Shared Styles (no Liquid inside) / CSS dùng chung ===== -->
+<style>
+  :root{
+    --bar-h: 48px;
+    --btn-w: 78px; --btn-h: 112px; --btn-right: 22px; --btn-bottom: 22px;
+  }
+  @media (max-width:480px){
+    :root{ --btn-w:66px; --btn-h:98px; --btn-right:16px; --btn-bottom:16px; }
+  }
+
+  /* ===== Breadcrumb pill ===== */
+  .breadcrumbs{
+    position: sticky; top: 0; z-index: 1000;
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .4rem .8rem; margin: .75rem 0 1rem;
+    background:#111; border:1px solid #0f0; border-radius:9999px;
+    box-shadow:0 0 6px rgba(0,255,0,.25); max-width:100%; overflow:auto;
+  }
+  .breadcrumbs a{ color:#4af; text-decoration:none; font-weight:600; }
+  .breadcrumbs span{ color:#fff; font-weight:700; }
+
+  main h2, main h3{ scroll-margin-top: calc(var(--bar-h) + 12px); }
+
+  /* ===== TOC ===== */
+  .toc{
+    border-left:3px solid #6f6; margin:.5rem 0 1.2rem; background:#0b0b0b;
+    border-radius:8px; box-shadow:0 0 6px rgba(0,255,0,.15); overflow:hidden;
+  }
+  .toc-head{ display:flex; align-items:center; gap:.5rem; padding:.55rem .9rem; cursor:pointer; user-select:none; }
+  .toc-caret{ transition: transform .2s; }
+  .toc[aria-expanded="true"] .toc-caret,.toc:not(.collapsed) .toc-caret{ transform: rotate(90deg); }
+  .toc-body{ overflow:hidden; max-height:0; transition:max-height .25s, padding .25s; padding:0 .9rem; }
+  .toc:not(.collapsed) .toc-body{ padding:.2rem .9rem .8rem; max-height:1200px; }
+  .toc-body ul{ list-style:none; padding:0; margin:0; }
+  .toc-body li{ margin:.2rem 0; }
+  .toc-body li[data-level="3"]{ margin-left:1rem; }
+
+  /* ===== Back link pill ===== */
+  .back-notes{
+    display:inline-block; padding:.6rem 1.2rem; border:1px solid #0f0; border-radius:9999px;
+    color:#4af; text-decoration:none; font-weight:600; background:#111; box-shadow:0 0 6px rgba(0,255,0,.25);
+    transition:all .25s;
+  }
+  .back-notes:hover{ background:#0f0; color:#111; }
+
+  /* ===== Back-to-Top card + ring ===== */
+  #backTop{
+    position: fixed; right: var(--btn-right); bottom: var(--btn-bottom); z-index: 9999;
+    width: var(--btn-w); height: var(--btn-h); border-radius: 14px; cursor: pointer;
+    background: linear-gradient(180deg,#0b0b0b,#050505); border: 2px solid transparent;
+    box-shadow: 0 0 14px rgba(0,255,170,.45), 0 0 26px rgba(0,140,255,.35), inset 0 0 12px rgba(0,255,170,.08);
+    display: none; opacity:.98; animation: floatCard 3s ease-in-out infinite;
+    transition: transform .25s, box-shadow .25s, opacity .25s, filter .25s;
+  }
+  #backTop::before{
+    content:""; position:absolute; inset:-2px; border-radius:16px; z-index:-1;
+    background:conic-gradient(from 0deg,#00ffa6,#00b7ff,#ff2bd6,#00ffa6);
+    filter:blur(6px) saturate(1.4); transition:transform 1.5s linear, filter .5s;
+  }
+  #backTop:hover{
+    box-shadow: 0 0 18px rgba(0,255,170,.65), 0 0 36px rgba(0,140,255,.55), inset 0 0 14px rgba(0,255,170,.12);
+    filter:brightness(1.06) contrast(1.08) saturate(1.12);
+    animation:shake .45s cubic-bezier(.36,.07,.19,.97) both, floatCard 3s ease-in-out infinite .45s;
+  }
+  #backTop:hover::before{ transform: rotate(360deg); filter: hue-rotate(360deg) blur(6px) saturate(1.4); }
+  #backTop .arrow{ position:absolute; top:22%; left:50%; transform:translateX(-50%); font-size:26px; color:#fff; text-shadow:0 0 8px rgba(0,255,170,.9),0 0 16px rgba(0,140,255,.7); pointer-events:none; }
+  #backTop .scroll-text{ position:absolute; bottom:16%; left:50%; transform:translateX(-50%); font-weight:800; font-size:1rem; color:#a3ff12; text-shadow:0 0 6px rgba(163,255,18,.85); pointer-events:none; }
+  #backTop .ring{ position:absolute; inset:-6px; width:100%; height:100%; transform: rotate(-90deg); pointer-events:none; }
+  #backTop .ring-bg{ fill:none; stroke:rgba(255,255,255,.18); stroke-width:4; }
+  #backTop .ring-fg{ fill:none; stroke:#a3ff12; stroke-width:4; stroke-linecap:round; stroke-dasharray:1 120; stroke-dashoffset:0; filter:drop-shadow(0 0 6px rgba(163,255,18,.7)); }
+
+  /* ===== Mini ring (above the card) ===== */
+  #scrollProgressMini{
+    position: fixed; right: 22px; bottom: 150px; /* tạm; JS sẽ đặt lại */
+    width: 52px; height: 52px; display: none; align-items: center; justify-content: center;
+    border-radius: 50%; background: #0b0b0b; box-shadow: 0 0 8px rgba(0,255,170,.4), 0 0 16px rgba(0,140,255,.3);
+    z-index: 9999;
+  }
+  #scrollProgressMini .ring{ position:absolute; inset:4px; transform: rotate(-90deg); }
+  #scrollProgressMini .ring-bg{ fill:none; stroke:rgba(255,255,255,.18); stroke-width:4; }
+  #scrollProgressMini .ring-fg{ fill:none; stroke:#a3ff12; stroke-width:4; stroke-linecap:round; stroke-dasharray:1 120; stroke-dashoffset:0; filter:drop-shadow(0 0 4px rgba(163,255,18,.7)); }
+  #scrollProgressMini .percent{ position:relative; font-size:.72rem; font-weight:800; color:#a3ff12; text-shadow:0 0 4px rgba(163,255,18,.6); }
+  @media (max-width:480px){
+    #scrollProgressMini{ width:46px; height:46px; }
+    #scrollProgressMini .percent{ font-size:.68rem; }
+    #scrollProgressMini .ring{ inset:3px; }
+  }
+
+  /* Animations */
+  @keyframes floatCard{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  @keyframes shake{ 10%,90%{transform:translate3d(-1px,0,0)} 20%,80%{transform:translate3d(2px,0,0)} 30%,50%,70%{transform:translate3d(-3px,0,0)} 40%,60%{transform:translate3d(3px,0,0)} }
+</style>
+
+<!-- ===== Hide title on subpages ===== -->
+{%- unless page.url == '/' or page.path == 'index.md' -%}
+<style>.page-header .project-name, .page-header .project-tagline{ display:none; }</style>
+{%- endunless -%}
+
+<!-- ===== Back-to-Top card ===== -->
+<button id="backTop" type="button" title="Back to top" aria-label="Back to top">
+  <svg class="ring" viewBox="0 0 44 44" width="84" height="84" focusable="false" aria-hidden="true">
+    <circle class="ring-bg" cx="22" cy="22" r="19.5"></circle>
+    <circle class="ring-fg" cx="22" cy="22" r="19.5"></circle>
+  </svg>
+  <span class="arrow">▲</span>
+  <span class="scroll-text">0%</span>
+</button>
+
+<!-- ===== Mini progress ring (above the card) ===== -->
+<div id="scrollProgressMini" aria-hidden="true" title="Scroll progress">
+  <svg class="ring" viewBox="0 0 44 44" width="44" height="44">
+    <circle class="ring-bg" cx="22" cy="22" r="19.5"></circle>
+    <circle class="ring-fg" cx="22" cy="22" r="19.5"></circle>
+  </svg>
+  <span class="percent">0%</span>
+</div>
+
+<!-- ===== Scripts ===== -->
+<script>
+  /* Dedupe: remove duplicated includes if layout accidentally includes twice */
+  (function dedupe(){
+    const killDup = (sel) => {
+      const nodes = document.querySelectorAll(sel);
+      if (nodes.length > 1) nodes.forEach((el, i) => { if (i > 0) el.remove(); });
+    };
+    killDup('#backTop');
+    killDup('#scrollProgressMini');
+  })();
+
+  // ===== TOC Builder =====
+  (function () {
+    const toc = document.getElementById("toc");
+    if (!toc) return;
+    const heads = [...document.querySelectorAll("main h2, main h3")];
+    if (!heads.length) { toc.remove(); return; }
+    heads.forEach(h => { if (!h.id) h.id = h.textContent.trim().toLowerCase().replace(/[^\w\- ]+/g,"").replace(/\s+/g,"-"); });
+    const ul = document.createElement("ul");
+    heads.forEach(h => { const li = document.createElement("li"); li.setAttribute("data-level", h.tagName==="H3"?"3":"2"); const a = document.createElement("a"); a.href = "#"+h.id; a.textContent = h.textContent; li.appendChild(a); ul.appendChild(li); });
+    toc.querySelector(".toc-body").appendChild(ul);
+    const key = "toc-state:"+location.pathname, preferOpen = matchMedia("(min-width:900px)").matches, saved = localStorage.getItem(key), startOpen = saved ? saved==="open" : preferOpen;
+    setExpanded(startOpen);
+    function setExpanded(open){ toc.classList.toggle("collapsed", !open); toc.setAttribute("aria-expanded", String(open)); toc.querySelector(".toc-head").setAttribute("aria-expanded", String(open)); }
+    function toggle(){ const open = toc.classList.contains("collapsed"); setExpanded(open); localStorage.setItem(key, open ? "open" : "closed"); }
+    toc.querySelector(".toc-head").addEventListener("click", toggle);
+    toc.querySelector(".toc-head").addEventListener("keydown", e => { if (e.key==="Enter"||e.key===" "){ e.preventDefault(); toggle(); } });
+  })();
+
+  // ===== Back-to-Top + two rings (main + mini) =====
+  (function () {
+    const btn = document.getElementById("backTop");
+    const txt = btn?.querySelector(".scroll-text");
+    const ringFg = btn?.querySelector(".ring-fg");
+
+    const mini = document.getElementById("scrollProgressMini");
+    const miniTxt  = mini?.querySelector(".percent");
+    const miniRing = mini?.querySelector(".ring-fg");
+
+    if (!btn || !txt || !ringFg || !mini || !miniTxt || !miniRing) return;
+
+    // circumference
+    const r = parseFloat(ringFg.getAttribute("r") || "19.5");
+    const C = 2 * Math.PI * r;
+    ringFg.style.strokeDasharray = `${C} ${C}`;
+    ringFg.style.strokeDashoffset = `${C}`;
+    miniRing.style.strokeDasharray = `${C} ${C}`;
+    miniRing.style.strokeDashoffset = `${C}`;
+
+    function setProgress(p){
+      const off = String(C - (p/100)*C);
+      ringFg.style.strokeDashoffset  = off;
+      miniRing.style.strokeDashoffset= off;
+      txt.textContent = p + "%";
+      miniTxt.textContent = p + "%";
+    }
+
+    // place mini right above the card using real position
+    function placeMini(){
+      const gap = 12;
+      const rect = btn.getBoundingClientRect();
+      mini.style.right  = (window.innerWidth  - rect.right) + "px";
+      mini.style.bottom = (window.innerHeight - rect.top + gap) + "px";
+    }
+
+    function update(){
+      const doc = document.documentElement;
+      const max = doc.scrollHeight - doc.clientHeight;
+      const sc  = max > 0 ? Math.round((doc.scrollTop / max) * 100) : 0;
+      setProgress(sc);
+      const show = sc > 3;
+      btn.style.display  = show ? "block" : "none";
+      mini.style.display = show ? "flex"  : "none";
+      if (show) placeMini();
+    }
+
+    window.addEventListener("scroll", update, { passive:true });
+    window.addEventListener("resize", () => { if (mini.style.display !== "none") placeMini(); });
+    update();
+
+    btn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  })();
+</script>
